@@ -8,15 +8,10 @@ os.system("sudo pip3 install torchvision")
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torchvision
 import math
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-import numpy
-
-class NeuralNetwork(nn.Module):
-    pass
 
 
 def read_data():
@@ -29,46 +24,6 @@ def read_data():
     data_loader_train = DataLoader(dataset=dataset_train, batch_size=256, shuffle=True)
     data_loader_val = DataLoader(dataset=dataset_val, batch_size=256, shuffle=False)
     return dataset_train, dataset_val, data_loader_train, data_loader_val
-
-
-# 判断是否有GPU
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-num_epochs = 5  # 50轮
-batch_size = 50  # 50步长
-learning_rate = 0.01  # 学习率0.01
-
-# Cifar 数据集是32*32的图片，如若导入自己数据集记得修改图片宽高数值
-img_height = 32
-img_width = 32
-
-# 图像预处理
-transform = transforms.Compose([
-    transforms.Pad(4),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomCrop(32),
-    transforms.ToTensor()])
-'''
-# CIFAR-10 数据集下载
-train_dataset = torchvision.datasets.CIFAR10(root='data/',
-                                             train=True,
-                                             transform=transform,
-                                             download=True)
-
-test_dataset = torchvision.datasets.CIFAR10(root='data/',
-                                            train=False,
-                                            transform=transforms.ToTensor())
-
-# 数据载入
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-                                           batch_size=batch_size,
-                                           shuffle=True)
-
-test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                          batch_size=batch_size,
-                                          shuffle=False)
-'''
-train_dataset, test_dataset, train_loader, test_loader = read_data()
 
 
 # 3x3 卷积定义
@@ -113,10 +68,13 @@ class ResidualBlock(nn.Module):
         return out
 
 
-# ResNet定义
-class ResNet(nn.Module):
+img_height = 32
+img_width = 32
+
+
+class NeuralNetwork(nn.Module):
     def __init__(self, block, layers, num_classes=10):
-        super(ResNet, self).__init__()
+        super(NeuralNetwork, self).__init__()
         self.conv = conv3x3(3, 64, kernel_size=7, stride=2)
         self.bn = nn.BatchNorm2d(64)
         self.max_pool = nn.MaxPool2d(3, 2, padding=1)
@@ -153,68 +111,11 @@ class ResNet(nn.Module):
         return out
 
 
-# Resnet-50 3-4-6-3 总计(3+4+6+3)*3=48 个conv层 加上开头的两个Conv 一共50层
-model = ResNet(ResidualBlock, [3, 4, 6, 3]).to(device)
-
-# 损失函数
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-
-# 更新学习率
-def update_lr(optimizer, lr):
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
-
-
-# 训练数据集
-total_step = len(train_loader)
-curr_lr = learning_rate
-for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):
-        images = images.to(device)
-        labels = labels.to(device)
-
-        # Forward pass
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-
-        # Backward and optimize
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        if (i + 1) % 100 == 0:
-            print("Epoch [{}/{}], Step [{}/{}] Loss: {:.4f}"
-                  .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
-
-    # 延迟学习率
-    if (epoch + 1) % 20 == 0:
-        curr_lr /= 3
-        update_lr(optimizer, curr_lr)
-
-# 测试网络模型
-model.eval()
-with torch.no_grad():
-    correct = 0
-    total = 0
-    for images, labels in test_loader:
-        images = images.to(device)
-        labels = labels.to(device)
-        outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
-
-    print('Accuracy of the model on the test images: {} %'.format(100 * correct / total))
-
-# S将模型保存
-torch.save(model.state_dict(), 'resnet.ckpt')
-'''
 def main():
-    model = NeuralNetwork()  # 若有参数则传入参数
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = NeuralNetwork(ResidualBlock, [3, 4, 23, 3]).to(device)
+    # model = NeuralNetwork()  # 若有参数则传入参数
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
     model.load_state_dict(torch.load(parent_dir + '/pth/model.pth'))
     return model
-'''
