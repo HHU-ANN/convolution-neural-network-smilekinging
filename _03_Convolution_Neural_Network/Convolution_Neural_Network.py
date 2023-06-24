@@ -1,6 +1,6 @@
 # 在该文件NeuralNetwork类中定义你的模型
 # 在自己电脑上训练好模型，保存参数，在这里读取模型参数（不要使用JIT读取），在main中返回读取了模型参数的模型
-
+# 111
 import os
 
 os.system("sudo pip3 install torch")
@@ -113,7 +113,7 @@ class NeuralNetwork(nn.Module):
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = NeuralNetwork(ResidualBlock, [3, 4, 23, 3]).to(device)
+    model = NeuralNetwork(ResidualBlock, [3, 4, 6, 3]).to(device)
     # model = NeuralNetwork()  # 若有参数则传入参数
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
