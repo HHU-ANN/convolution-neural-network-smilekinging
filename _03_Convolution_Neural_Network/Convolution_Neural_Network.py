@@ -7,21 +7,23 @@ os.system("sudo pip3 install torch")
 os.system("sudo pip3 install torchvision")
 
 import torch
-import torch.nn as nn
+from torch import nn, optim
 import torchvision
-import math
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+from matplotlib import  pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
 
 
 def read_data():
     # 这里可自行修改数据预处理，batch大小也可自行调整
     # 保持本地训练的数据读取和这里一致
-    transform = transforms.Compose([
+    '''transform = transforms.Compose([
         transforms.Pad(4),
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32),
-        transforms.ToTensor()])
+        transforms.ToTensor()])'''
     dataset_train = torchvision.datasets.CIFAR10(root='../data/exp03', train=True, download=True,
                                                  transform=transform)
     dataset_val = torchvision.datasets.CIFAR10(root='../data/exp03', train=False, download=False,
@@ -109,16 +111,19 @@ class NeuralNetwork(nn.Module):
         out = self.fc(out)
         return out
 
+class NewNet(nn.modules):
+    pass
 
 def main():
-    device = torch.device('cpu')
-    model = NeuralNetwork(ResidualBlock, [2,2,2]).to(device)
-    # model = NeuralNetwork()  # 若有参数则传入参数
+    #device = torch.device('cpu')
+    #model = NeuralNetwork(ResidualBlock, [2,2,2]).to(device)
+    model = NewNet()  # 若有参数则传入参数
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
     pre_model = torch.load(parent_dir + '/pth/model.pth', map_location=torch.device('cpu'))
-    model_dict = model.state_dict()
+    '''model_dict = model.state_dict()
     pre_model = {k: v for k, v in pre_model.items() if (k in model_dict and 'fc' not in k)}
     model_dict.update(pre_model)
-    model.load_state_dict(model_dict)
+    model.load_state_dict(model_dict)'''
+    model.load_state_dict(pre_model)
     return model
