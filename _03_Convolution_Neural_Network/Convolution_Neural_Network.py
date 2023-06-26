@@ -7,12 +7,11 @@ os.system("sudo pip3 install torch")
 os.system("sudo pip3 install torchvision")
 
 import torch
-from torch import nn, optim
+import torch.nn as nn
 import torchvision
-import torch.nn.functional as F
+import math
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 
 
 def read_data():
