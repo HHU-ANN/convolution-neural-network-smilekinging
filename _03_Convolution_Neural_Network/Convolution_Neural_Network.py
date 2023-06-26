@@ -15,23 +15,6 @@ from torch.utils.data import DataLoader
 
 
 def read_data():
-    # 这里可自行修改数据预处理，batch大小也可自行调整
-    # 保持本地训练的数据读取和这里一致
-    '''
-    transform = transforms.Compose([
-        transforms.Pad(4),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32),
-        transforms.ToTensor()])
-    '''
-    '''
-    transform1 = transforms.ToTensor()
-    transform2 = transforms.ToTensor()
-    dataset_train = torchvision.datasets.CIFAR10(root='data/exp03', train=True, download=True,
-                                                 transform=transform1)
-    dataset_val = torchvision.datasets.CIFAR10(root='data/exp03', train=False, download=False,
-                                               transform=transform2)
-    '''
     dataset_train = torchvision.datasets.CIFAR10(root='../data/exp03', train=True, download=True, transform=torchvision.transforms.ToTensor())
     dataset_val = torchvision.datasets.CIFAR10(root='../data/exp03', train=False, download=False, transform=torchvision.transforms.ToTensor())
     data_loader_train = DataLoader(dataset=dataset_train, batch_size=256, shuffle=True)
