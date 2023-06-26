@@ -3,8 +3,8 @@
 # 111
 import os
 
-os.system("sudo pip3 install torch")
-os.system("sudo pip3 install torchvision")
+#os.system("sudo pip3 install torch")
+#os.system("sudo pip3 install torchvision")
 
 import torch
 import torch.nn as nn
@@ -17,40 +17,43 @@ from torch.utils.data import DataLoader
 def read_data():
     # 这里可自行修改数据预处理，batch大小也可自行调整
     # 保持本地训练的数据读取和这里一致
-    '''transform = transforms.Compose([
+    '''
+    transform = transforms.Compose([
         transforms.Pad(4),
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32),
-        transforms.ToTensor()])'''
-    dataset_train = torchvision.datasets.CIFAR10(root='../data/exp03', train=True, download=True,
-                                                 transform=transform)
-    dataset_val = torchvision.datasets.CIFAR10(root='../data/exp03', train=False, download=False,
-                                               transform=transform)
+        transforms.ToTensor()])
+    '''
+    '''
+    transform1 = transforms.ToTensor()
+    transform2 = transforms.ToTensor()
+    dataset_train = torchvision.datasets.CIFAR10(root='data/exp03', train=True, download=True,
+                                                 transform=transform1)
+    dataset_val = torchvision.datasets.CIFAR10(root='data/exp03', train=False, download=False,
+                                               transform=transform2)
+    '''
+    dataset_train = torchvision.datasets.CIFAR10(root='../data/exp03', train=True, download=True, transform=torchvision.transforms.ToTensor())
+    dataset_val = torchvision.datasets.CIFAR10(root='../data/exp03', train=False, download=False, transform=torchvision.transforms.ToTensor())
     data_loader_train = DataLoader(dataset=dataset_train, batch_size=256, shuffle=True)
     data_loader_val = DataLoader(dataset=dataset_val, batch_size=256, shuffle=False)
     return dataset_train, dataset_val, data_loader_train, data_loader_val
 
 
-def conv3x3(in_channels, out_channels, kernel_size=3, stride=1, padding=1):
-    return nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size,
-                     stride=stride, padding=padding, bias=False)
+def conv3x3(in_channels, out_channels, stride=1):
+    return nn.Conv2d(in_channels, out_channels, kernel_size=3,
+                     stride=stride, padding=1, bias=False)
 
 
 class ResidualBlock(nn.Module):
-
     def __init__(self, in_channels, out_channels, stride=1, downsample=None):
         super(ResidualBlock, self).__init__()
-        self.mid_channels = out_channels // 4
-        self.conv1 = conv3x3(in_channels, self.mid_channels, kernel_size=1, stride=stride, padding=0)
-        self.bn1 = nn.BatchNorm2d(self.mid_channels)
+        self.conv1 = conv3x3(in_channels, out_channels, stride)
+        self.bn1 = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(self.mid_channels, self.mid_channels)
-        self.bn2 = nn.BatchNorm2d(self.mid_channels)
-        self.conv3 = conv3x3(self.mid_channels, out_channels, kernel_size=1, padding=0)
-        self.bn3 = nn.BatchNorm2d(out_channels)
-        self.downsample_0 = conv3x3(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
+        self.conv2 = conv3x3(out_channels, out_channels)
+        self.bn2 = nn.BatchNorm2d(out_channels)
         self.downsample = downsample
-
+        
     def forward(self, x):
         residual = x
         out = self.conv1(x)
@@ -58,15 +61,9 @@ class ResidualBlock(nn.Module):
         out = self.relu(out)
         out = self.conv2(out)
         out = self.bn2(out)
-        out = self.conv3(out)
-        out = self.bn3(out)
         if self.downsample:
             residual = self.downsample(x)
-        else:
-            residual = self.downsample_0(x)
-
         out += residual
-        out = self.bn3(out)
         out = self.relu(out)
         return out
 
@@ -109,19 +106,13 @@ class NeuralNetwork(nn.Module):
         out = self.fc(out)
         return out
 
-class NewNet(nn.Module):
+class AlexNet(nn.Module):
     pass
 
 def main():
-    #device = torch.device('cpu')
-    #model = NeuralNetwork(ResidualBlock, [2,2,2]).to(device)
-    model = NewNet()  # 若有参数则传入参数
+    model = NeuralNetwork(ResidualBlock, [2,2,2])
+    # model = AlexNet()  # 若有参数则传入参数
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
-    pre_model = torch.load(parent_dir + '/pth/model.pth', map_location=torch.device('cpu'))
-    '''model_dict = model.state_dict()
-    pre_model = {k: v for k, v in pre_model.items() if (k in model_dict and 'fc' not in k)}
-    model_dict.update(pre_model)
-    model.load_state_dict(model_dict)'''
-    model.load_state_dict(pre_model)
+    model.load_state_dict(torch.load(parent_dir+'/pth/model.pth', map_location=torch.device('cpu')))
     return model
