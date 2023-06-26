@@ -26,19 +26,17 @@ def read_data():
     return dataset_train, dataset_val, data_loader_train, data_loader_val
 
 
-# 3x3 卷积定义
 def conv3x3(in_channels, out_channels, kernel_size=3, stride=1, padding=1):
     return nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size,
                      stride=stride, padding=padding, bias=False)
 
 
-# Resnet_50  中的残差块
 class ResidualBlock(nn.Module):
+
     def __init__(self, in_channels, out_channels, stride=1, downsample=None):
         super(ResidualBlock, self).__init__()
         self.mid_channels = out_channels // 4
-        self.conv1 = conv3x3(in_channels, self.mid_channels, kernel_size=1, stride=stride,
-                             padding=0)  # Resnet50 中，从第二个残差块开始每个layer的第一个残差块都需要一次downsample
+        self.conv1 = conv3x3(in_channels, self.mid_channels, kernel_size=1, stride=stride, padding=0)
         self.bn1 = nn.BatchNorm2d(self.mid_channels)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv3x3(self.mid_channels, self.mid_channels)
@@ -68,54 +66,50 @@ class ResidualBlock(nn.Module):
         return out
 
 
-img_height = 32
-img_width = 32
-
-
 class NeuralNetwork(nn.Module):
     def __init__(self, block, layers, num_classes=10):
         super(NeuralNetwork, self).__init__()
-        self.conv = conv3x3(3, 64, kernel_size=7, stride=2)
-        self.bn = nn.BatchNorm2d(64)
-        self.max_pool = nn.MaxPool2d(3, 2, padding=1)
-        self.layer1 = self.make_layer(block, 64, 256, layers[0])
-        self.layer2 = self.make_layer(block, 256, 512, layers[1], 2)
-        self.layer3 = self.make_layer(block, 512, 1024, layers[2], 2)
-        self.layer4 = self.make_layer(block, 1024, 2048, layers[3], 2)
-        self.avg_pool = nn.AvgPool2d(3, stride=1, padding=1)
-        self.fc = nn.Linear(math.ceil(img_height / 32) * math.ceil(img_width / 32) * 2048, num_classes)
-
-    def make_layer(self, block, in_channels, out_channels, blocks, stride=1):
+        self.in_channels = 16
+        self.conv = conv3x3(3, 16)
+        self.bn = nn.BatchNorm2d(16)
+        self.relu = nn.ReLU(inplace=True)
+        self.layer1 = self.make_layer(block, 16, layers[0])
+        self.layer2 = self.make_layer(block, 32, layers[1], 2)
+        self.layer3 = self.make_layer(block, 64, layers[2], 2)
+        self.avg_pool = nn.AvgPool2d(8)
+        self.fc = nn.Linear(64, num_classes)
+        
+    def make_layer(self, block, out_channels, blocks, stride=1):
         downsample = None
-        if (stride != 1):
+        if (stride != 1) or (self.in_channels != out_channels):
             downsample = nn.Sequential(
-                conv3x3(in_channels, out_channels, kernel_size=3, stride=stride),
+                conv3x3(self.in_channels, out_channels, stride=stride),
                 nn.BatchNorm2d(out_channels))
         layers = []
-        layers.append(block(in_channels, out_channels, stride, downsample))
-
+        layers.append(block(self.in_channels, out_channels, stride, downsample))
+        self.in_channels = out_channels
         for i in range(1, blocks):
             layers.append(block(out_channels, out_channels))
         return nn.Sequential(*layers)
-
+    
     def forward(self, x):
         out = self.conv(x)
         out = self.bn(out)
-        out = self.max_pool(out)
+        out = self.relu(out)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = self.layer4(out)
         out = self.avg_pool(out)
-        out = out.view(-1, math.ceil(img_height / 32) * math.ceil(img_width / 32) * 2048)
+        out = out.view(out.size(0), -1)
+        out = self.fc(out)
         return out
 
 
 def main():
-    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = NeuralNetwork(ResidualBlock, [3, 4, 6, 3])#.to(device)
+    device = torch.device('cpu')
+    model = NeuralNetwork(ResidualBlock, [3, 4, 6, 3]).to(device)
     # model = NeuralNetwork()  # 若有参数则传入参数
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
-    model.load_state_dict(torch.load(parent_dir + '/pth/model.pth'))
+    model.load_state_dict(torch.load(parent_dir + '/pth/model.pth', map_location=torch.device('cpu')))
     return model
