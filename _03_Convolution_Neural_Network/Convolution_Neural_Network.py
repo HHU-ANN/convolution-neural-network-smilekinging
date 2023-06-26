@@ -111,5 +111,9 @@ def main():
     # model = NeuralNetwork()  # 若有参数则传入参数
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
-    model.load_state_dict(torch.load(parent_dir + '/pth/model.pth', map_location=torch.device('cpu')))
+    pre_model = torch.load(parent_dir + '/pth/model.pth', map_location=torch.device('cpu'))
+    model_dict = model.state_dict()
+    pre_model = {k: v for k, v in pre_model.items() if (k in model_dict and 'fc' not in k)}
+    model_dict.update(pre_model)
+    model.load_state_dict(model_dict)
     return model
