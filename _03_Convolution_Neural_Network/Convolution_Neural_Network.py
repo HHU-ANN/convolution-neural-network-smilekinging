@@ -112,8 +112,8 @@ class NeuralNetwork(nn.Module):
 
 
 def main():
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = NeuralNetwork(ResidualBlock, [3, 4, 6, 3]).to(device)
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = NeuralNetwork(ResidualBlock, [3, 4, 6, 3])#.to(device)
     # model = NeuralNetwork()  # 若有参数则传入参数
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
