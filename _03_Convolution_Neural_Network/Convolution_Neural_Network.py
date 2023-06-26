@@ -109,7 +109,7 @@ class NeuralNetwork(nn.Module):
         out = self.fc(out)
         return out
 
-class NewNet(nn.modules):
+class NewNet(nn.Module):
     pass
 
 def main():
