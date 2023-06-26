@@ -12,7 +12,6 @@ import torchvision
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from matplotlib import  pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 
 
